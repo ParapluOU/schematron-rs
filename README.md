@@ -63,18 +63,23 @@ is parsed but not enforced: expressions are always XPath 3.1. That is a superset
 `xpath2` binding, but it differs from `xslt1`/`xpath` (XPath 1.0) in places — most visibly,
 an untyped comparison such as `@a > @b` is numeric in 1.0 and may be string-ordered in 3.1.
 
-## Known upstream defect
+## XPath engine
 
-**`xee-xpath` 0.1.5 gets greater-than against NaN wrong.** `xs:double('NaN') > 1` returns
-`true`; XPath requires every comparison involving NaN to be false. `lt` and `eq` are
-correct, so this is isolated to `gt`.
+Built on [`ParapluOU/xee`](https://github.com/ParapluOU/xee), the org's fork of
+[Xee](https://github.com/Paligo/xee), rather than the crates.io release.
 
-It bites in a common Schematron idiom: `number(missing-element) > 1000` is NaN > 1000, and
-so fires when it must not. Until it is fixed, prefer the bare comparison —
-`missing-element > 1000` — which is an empty sequence and correctly yields false.
+Developing this surfaced a bug there and it is fixed in the fork: ordering comparisons
+against NaN returned the wrong answer. `xs:double('NaN') gt 1` was true, and because the
+result depended on which side NaN was on, `1 lt xs:double('NaN')` was too. `Atomic::Float`
+and `Atomic::Double` wrap `OrderedFloat`, whose `Ord` is a total order that sorts NaN above
+every other value; `op_gt`, `op_lt`, `op_ge` and `op_le` compared those wrappers directly,
+while `op_eq` already destructured to the raw `f64`. That is why equality was right and the
+four ordering operators were not.
 
-`known_issue_nan_greater_than_is_wrong` in `crates/schematron/tests/conformance.rs` pins the
-current behaviour, so the test fails the day the fix lands and this note can go.
+It matters here because `number(missing-element) > threshold` is an everyday Schematron
+idiom, and it was firing when it must not. `nan_comparisons_are_false` guards it.
+
+The fix is upstreamable: the same defect is in Xee proper.
 
 ## Tests
 

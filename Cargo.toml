@@ -10,6 +10,6 @@ repository = "https://github.com/ParapluOU/schematron-rs"
 rust-version = "1.85"
 
 [workspace.dependencies]
-xee-xpath = "0.1.5"
+xee-xpath = { git = "https://github.com/ParapluOU/xee", branch = "main" }
 xot = "0.31"
 thiserror = "2"

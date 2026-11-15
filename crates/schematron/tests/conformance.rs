@@ -202,21 +202,26 @@ fn assert_and_report_kinds_are_distinguished() {
     assert_eq!(r.failures().count(), 1);
 }
 
-/// Known upstream defect in xee-xpath 0.1.5: a greater-than comparison against NaN
-/// returns true, where XPath requires every comparison with NaN to be false.
-/// `lt` and `eq` are correct, so this is isolated to `gt`.
+/// XPath requires every ordering comparison involving NaN to be false.
 ///
-/// This test asserts the CURRENT behaviour so the day it is fixed upstream, it
-/// fails loudly and the note in the README can be removed.
+/// This was wrong in xee-xpath 0.1.5 — `NaN gt 1` returned true, because
+/// `Atomic::Double` wraps `OrderedFloat`, whose total order sorts NaN above
+/// everything, and the ordering operators compared the wrappers rather than the
+/// raw f64. Fixed in ParapluOU/xee; the idiom `number(missing) > threshold` is
+/// common enough in Schematron that this is worth guarding here too.
 #[test]
-fn known_issue_nan_greater_than_is_wrong() {
+fn nan_comparisons_are_false() {
     let r = run(r#"<sch:pattern id="p"><sch:rule context="/x:lib">
         <sch:report id="gt" test="xs:double('NaN') &gt; 1">NaN gt</sch:report>
         <sch:report id="lt" test="xs:double('NaN') &lt; 1">NaN lt</sch:report>
+        <sch:report id="ge" test="xs:double('NaN') &gt;= 1">NaN ge</sch:report>
         <sch:report id="eq" test="xs:double('NaN') = xs:double('NaN')">NaN eq</sch:report>
+        <sch:report id="missing" test="number(//x:book[1]/x:nope) &gt; 1">number(missing) gt</sch:report>
+        <sch:report id="control" test="2 &gt; 1">control</sch:report>
       </sch:rule></sch:pattern>"#);
-    let fired = ids(&r);
-    assert!(fired.contains(&"gt".into()), "upstream NaN gt bug appears fixed — update the README");
-    assert!(!fired.contains(&"lt".into()), "NaN lt is correct");
-    assert!(!fired.contains(&"eq".into()), "NaN eq is correct");
+    assert_eq!(
+        ids(&r),
+        vec!["control"],
+        "only the control should fire; every NaN comparison must be false"
+    );
 }
