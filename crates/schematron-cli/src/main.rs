@@ -89,8 +89,12 @@ fn main() -> ExitCode {
         match f.kind {
             schematron::CheckKind::Assert => {
                 failed += 1;
-                let id = f.id.clone().unwrap_or_default();
-                println!("{red}FAIL{off} {id} {}", f.message);
+                // Schemas often repeat the id at the start of the message; do not print it twice.
+                let id = match &f.id {
+                    Some(i) if !f.message.starts_with(i.as_str()) => format!("{i} "),
+                    _ => String::new(),
+                };
+                println!("{red}FAIL{off} {id}{}", f.message);
                 if !quiet {
                     println!("     {dim}at {}{off}", f.location);
                 }
