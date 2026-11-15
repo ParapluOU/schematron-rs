@@ -1,0 +1,13 @@
+[package]
+name = "schematron"
+description = "ISO Schematron (ISO/IEC 19757-3) validation, on XPath 3.1"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+xee-xpath.workspace = true
+xot.workspace = true
+thiserror.workspace = true

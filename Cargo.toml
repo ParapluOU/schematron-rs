@@ -1,0 +1,15 @@
+[workspace]
+resolver = "2"
+members = ["crates/schematron", "crates/schematron-cli"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/ParapluOU/schematron-rs"
+rust-version = "1.85"
+
+[workspace.dependencies]
+xee-xpath = "0.1.5"
+xot = "0.31"
+thiserror = "2"
